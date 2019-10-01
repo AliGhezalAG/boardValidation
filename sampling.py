@@ -88,20 +88,16 @@ plt.plot(newBigBenMat[:,0], newBigBenMat[:,5], 'k')
 plt.plot(uttMat[0][:,0], uttMat[0][:,5], 'r--')
 plt.show()
 
-"""
 def getCoP_x(uttDataFrame):
     topLeft = uttDataFrame[1]
     topRight = uttDataFrame[2]
     bottomLeft = uttDataFrame[3]
     bottomRight = uttDataFrame[4]
     
-    if (topRight+bottomRight+topLeft+bottomLeft) > 5 :
-        cop_x = (topRight+bottomRight)-(topLeft+bottomLeft)
-        cop_x = cop_x / (topRight+bottomRight+topLeft+bottomLeft)
-        cop_x = (270*cop_x)/2        
-        return cop_x
-    else :
-        return 0
+    cop_x = (topRight+bottomRight)-(topLeft+bottomLeft)
+    cop_x = cop_x / (topRight+bottomRight+topLeft+bottomLeft)
+    cop_x = (0.270*cop_x)/2        
+    return cop_x
     
 def getCoP_y(uttDataFrame):
     topLeft = uttDataFrame[1]
@@ -109,14 +105,93 @@ def getCoP_y(uttDataFrame):
     bottomLeft = uttDataFrame[3]
     bottomRight = uttDataFrame[4]
     
-    if (topRight+bottomRight+topLeft+bottomLeft) > 5 :
-        cop_x = (topRight+topLeft)-(bottomRight+bottomLeft)
-        cop_x = cop_x / (topRight+bottomRight+topLeft+bottomLeft)
-        cop_x = (270*cop_x)/2        
-        return cop_x
-    else :
-        return 0
+    cop_x = (topRight+topLeft)-(bottomRight+bottomLeft)
+    cop_x = cop_x / (topRight+bottomRight+topLeft+bottomLeft)
+    cop_x = (0.270*cop_x)/2        
+    return cop_x
     
-cop_x = np.apply_along_axis(getCoP_x, 1, uttMat)
-cop_y = np.apply_along_axis(getCoP_y, 1, uttMat)
-"""
+def getCoP_x2(uttDataFrame):
+    topLeft = uttDataFrame[1]
+    topRight = uttDataFrame[2]
+    bottomLeft = uttDataFrame[3]
+    bottomRight = uttDataFrame[4]
+    
+    cop_x = (topRight+bottomRight)-(topLeft+bottomLeft)
+    cop_x = cop_x / (topRight+bottomRight+topLeft+bottomLeft)
+    cop_x = (0.440*cop_x)/2        
+    return cop_x
+    
+def getCoP_y2(uttDataFrame):
+    topLeft = uttDataFrame[1]
+    topRight = uttDataFrame[2]
+    bottomLeft = uttDataFrame[3]
+    bottomRight = uttDataFrame[4]
+    
+    cop_x = (topRight+topLeft)-(bottomRight+bottomLeft)
+    cop_x = cop_x / (topRight+bottomRight+topLeft+bottomLeft)
+    cop_x = (0.260*cop_x)/2        
+    return cop_x
+
+utt_cop_x = np.apply_along_axis(getCoP_x, 1, uttMat[0])
+utt_cop_y = np.apply_along_axis(getCoP_y, 1, uttMat[0])
+
+bigBen_cop_x = np.apply_along_axis(getCoP_x2, 1, newBigBenMat)
+bigBen_cop_y = np.apply_along_axis(getCoP_y2, 1, newBigBenMat)
+
+plt.plot(utt_cop_x, utt_cop_y)
+plt.plot(bigBen_cop_x, bigBen_cop_y)
+plt.show()
+
+def getAcceleration(pos_vector, i):
+    a_x = pos_vector[i-1]+pos_vector[i+1]-(2*pos_vector[i])
+    a_x = a_x/(0.01*0.01)
+    return a_x
+
+utt_acceleration_x = []
+utt_acceleration_y = []
+
+for i in range (1, utt_cop_x.size-1):
+    utt_acceleration_x.append(getAcceleration(utt_cop_x, i))
+    utt_acceleration_y.append(getAcceleration(utt_cop_y, i))
+
+plt.plot(utt_acceleration_x[100:350])
+plt.show()
+
+plt.plot(utt_acceleration_y[100:350])
+plt.show()
+
+weight = np.mean(uttMat[0][:,5])
+temp = uttMat[0][1:-1,5]
+
+cop_x_utt = utt_cop_x[1:-1]*uttMat[0][1:-1,5]*9.8
+cop_y_utt = utt_cop_y[1:-1]*uttMat[0][1:-1,5]*9.8
+
+F_x = uttMat[0][1:-1,5]*np.array(utt_acceleration_x)*0.003
+F_y = uttMat[0][1:-1,5]*np.array(utt_acceleration_y)*0.003
+
+F_z = (newBigBenMat[0:761,5] + bigBenObj[0]["weightKg"])*9.8
+
+F_x_z = F_x / F_z
+
+utt_fz = utt_cop_x[1:-1]*F_z
+#bigBen_cop_x_th = utt_cop_x[1:-1]*uttMat[0][1:-1,5]*9.8
+#bigBen_cop_x_th = bigBen_cop_x_th + (np.array(utt_acceleration_x) * weight *1)
+bigBen_cop_x_th = ((utt_cop_x[1:-1]*newBigBenMat[0:761,5]*9.8) - F_x) / F_z
+bigBen_cop_y_th = ((utt_cop_y[1:-1]*newBigBenMat[0:761,5]*9.8) - F_y) / F_z
+
+plt.plot(bigBen_cop_x_th, bigBen_cop_y_th)
+plt.plot(bigBen_cop_x, bigBen_cop_y)
+plt.show()
+
+plt.plot(bigBen_cop_x_th, bigBen_cop_y_th)
+plt.plot(utt_cop_x, utt_cop_y)
+plt.show()
+
+error_x = bigBen_cop_x_th - bigBen_cop_x[0:761]
+error_y = bigBen_cop_y_th - bigBen_cop_y[0:761]
+
+plt.plot(error_x)
+plt.show()
+
+plt.plot(error_y)
+plt.show()
